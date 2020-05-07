@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:cxf="http://camel.apache.org/schema/cxf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring        http://camel.apache.org/schema/spring/camel-spring.xsd  http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf-2.8.3.xsd">
+    <bean
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" id="bean-5bbfa6d2-516c-4687-9d16-1944031fa2ff"/>
+    <!-- ======================================== Bean conexion con JMS (cola ========================================================= -->
+    <bean class="org.apache.camel.component.jms.JmsComponent" id="jms">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value=""/>
+            </bean>
+        </property>
+    </bean>
+    <!-- ======================================== Bean conexion Base de datos ========================================================= -->
+    <!-- ======================================== Bean SOAP cxf ========================================================= -->
+    <cxf:cxfEndpoint address="/assist/ejemplo"
+        endpointName="a:TestWebServiceImplPort" id="CXFTest"
+        serviceClass="com.assist.services.TestWebService"
+        serviceName="a:TestWebServiceImplService"
+        wsdlURL="/wsdl/validador.wsdl" xmlns:a="http://services.assist.com/">
+        <!-- <cxf:properties> -->
+        <!-- <entry key="exceptionMessageCauseEnabled" value="true"/> -->
+        <!-- <entry key="dataFormat" value="PAYLOAD"/> -->
+        <!-- <entry key="schema-validation-enabled" value="true"/> -->
+        <!-- <entry key="faultStackTraceEnabled" value="true"/> -->
+        <!-- </cxf:properties> -->
+    </cxf:cxfEndpoint>
+    <!-- ======================================== Arranque de la ruta (camle 
+		context) ========================================================= -->
+    <camelContext id="camel" streamCache="true" threadNamePattern="100" xmlns="http://camel.apache.org/schema/spring">
+        <threadPoolProfile defaultProfile="true" id="changedProfile"
+            maxQueueSize="100" poolSize="3"/>
+        <route id="RT-MAIN-CXF-SOAP">
+            <from id="_from1" uri="cxf:bean:CXFTest?dataFormat=MESSAGE"/>
+            <setProperty id="_setProperty24" propertyName="uuid">
+                <xpath resultType="String">//transaccion/text()</xpath>
+            </setProperty>
+            <log id="_log1" message="========================${body}"/>
+            <to id="_to1" uri="velocity:plantilla/plan.vm"/>
+        </route>
+    </camelContext>
+</beans>
